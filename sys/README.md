@@ -1,6 +1,6 @@
 
 
-* all files from 
+* all files (except tz_context.h) from 
   https://github.com/STMicroelectronics/STM32CubeL0/blob/master/Drivers/CMSIS/Include
 
  * startup_stm32l072xx.s from 
