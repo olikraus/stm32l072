@@ -9,3 +9,4 @@
 
 ![stm32l072k_schematic.png](stm32l072k_schematic.png)
 
+![stm32l072k_ka8602.jpg](stm32l072k_ka8602.jpg)
