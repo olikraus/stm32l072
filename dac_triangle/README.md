@@ -1,4 +1,4 @@
-# Simple Blink Example for the STM32L072Kx
+# DAC Triangle Wave Output with the STM32L072Kx
 
  * USB UART Converter is connected to pins 19 and 20 of the STM32L072
  * Use a USB to 3.3V TTL UART converter (e.g. with CP2102) for programming with the STM32FLASH tool
