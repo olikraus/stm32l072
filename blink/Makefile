@@ -98,7 +98,7 @@ COMMON_FLAGS += -Os
 # COMMON_FLAGS +=  -nostdlib
 # remove unused data and function
 #COMMON_FLAGS += -ffunction-sections -fdata-sections -fshort-wchar
-COMMON_FLAGS += -ffunction-sections -fdata-sections
+COMMON_FLAGS += -ffunction-sections -fdata-sections -DUSER_VECT_TAB_ADDRESS
 # C flags
 CFLAGS:=$(COMMON_FLAGS) -std=gnu99 
 # LD flags

@@ -2,6 +2,13 @@
   LED blink project for the STM32L072 
   
   Assumes LED at Pin 18, GPIO PA8
+  
+  Ensure that -DUSER_VECT_TAB_ADDRESS is set during compilation, otherwise
+  interrupts will not work after the "go" commant of the flashware USART upload.
+  
+  Problem is, that SCB->VTOR doesn't point to FLASH_BASE, so manually
+  assigning SCB->VTOR = FLASH_BASE;	will also fix this.
+
 */
 
 #include "stm32l0xx.h"
