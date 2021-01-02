@@ -9,3 +9,5 @@
 
 ![https://raw.githubusercontent.com/olikraus/stm32l072/main/blink/stm32l072k_schematic.png](https://raw.githubusercontent.com/olikraus/stm32l072/main/blink/stm32l072k_schematic.png)
 
+![https://raw.githubusercontent.com/olikraus/stm32l072/main/blink/stm32l072k_ka8602.jpg](https://raw.githubusercontent.com/olikraus/stm32l072/main/blink/stm32l072k_ka8602.jpg)
+
