@@ -1,9 +1,9 @@
 /*
 
-  delay.h
+  rb.h
   
-  STM32 Project 
-
+  Ring Buffer 
+  
   BSD 3-Clause License
 
   Copyright (c) 2021, olikraus@gmail.com
@@ -36,24 +36,86 @@
   
 */
 
-#ifndef _DELAY_H
-#define _DELAY_H
+
+#ifndef _RB_H
+#define _RB_H
+
 
 #include <stdint.h>
 
 /*
-  Delay by the provided number of system ticks.
-  Any values between 0 and 0x0ffffffff are allowed.
+  ring buffer
 */
-void delay_system_ticks(uint32_t sys_ticks);
+struct _rb_struct
+{
+  uint8_t *ptr;  
+  uint16_t start;
+  uint16_t end;
+  uint16_t len;
+};
+typedef struct _rb_struct rb_t;
 
-/*
-  Delay by the provided number of micro seconds.
-  Limitation: "us" * System-Freq in MHz must now overflow in 32 bit.
-  Values between 0 and 1.000.000 (1 second) are ok.
 
-  Important: Ensure proper value in SystemCoreClock (e.g. by calling SystemCoreClockUpdate()).
+/* 
+  Prototype:
+    void rb_init(rb_t *rb, uint8_t *buf, uint16_t len)
+
+  Description:
+    Prepares a ring (first in first out) buffer. 
+
+  Parameter:
+    rb: 	Address of a (uninitialized) buffer data structure
+    buf:	Memory location large enough for "len" bytes
+    len:	Size of the ring buffer. 
+
+  Example:
+
+    rb_t usart_rx_ring_buffer;
+    uint8_t usart_rx_buf[32];
+    ...
+    rb_init(&usart_rx_ring_buffer, usart_rx_buf, 32);
+
 */
-void delay_micro_seconds(uint32_t us);
+void rb_init(rb_t *rb, uint8_t *buf, uint16_t len);
 
-#endif /* _DELAY_H */
+/* 
+  Prototype:
+    int rb_add(rb_t *rb, uint8_t data)
+
+  Description:
+    Add a byte to the ring buffer.
+
+  Precondition:
+    rb_init() must be called on the "rb" argument.
+
+  Parameter:
+    rb: 	Address of a (initialized) buffer data structure
+    data:	8 bit value, which should be stored in the ring buffer
+
+  Return:
+    0:	Data not stored, ring buffer is full
+    1:	all ok
+    
+*/
+int rb_add(rb_t *rb, uint8_t data);
+
+/* 
+  Prototype:
+    int rb_get(rb_t *rb)
+
+  Description:
+    Get data out of the ring buffer and remove this data item from the ring buffer.
+
+  Precondition:
+    rb_init() must be called on the "rb" argument.
+
+  Parameter:
+    rb: 	Address of a (initialized) buffer data structure
+
+  Return:
+    -1 if there is no data available, otherwise the data which was added before.
+    
+*/
+int rb_get(rb_t *rb);
+
+#endif
