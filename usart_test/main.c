@@ -1,6 +1,17 @@
 /* 
 
-  triangle output at DAC1 (STM32L072  Project)
+  USART test for the STM32L072  Project
+
+  Configuration is 115200 8-N-1. Only "\n" is sent. Receiving terminal should add \r
+  (e.g. use add CR function in "minicom")
+  
+
+  Linux:
+    stty -F /dev/ttyUSB0 sane 115200 && cat /dev/ttyUSB0
+    or stty -F /dev/ttyUSB0 sane 115200 igncr  && cat /dev/ttyUSB0
+    screen /dev/ttyUSB0  (terminate with "C-a k" or "C-a \")
+    minicom -D /dev/ttyUSB0  -b 115200 (terminate with "C-a x", change CR mode: "C-a u")
+    
 
   Ensure that -DUSER_VECT_TAB_ADDRESS is set during compilation, otherwise
   interrupts will not work after the "go" commant of the flashware USART upload.
@@ -20,9 +31,9 @@ void __attribute__ ((interrupt, used)) SysTick_Handler(void)
   SysTickCount++;  
   
   if ( SysTickCount & 1 )
-    GPIOA->BSRR = GPIO_BSRR_BS_8;		/* atomic set PA8 */
+    GPIOA->BSRR = GPIO_BSRR_BS_8;		// atomic set PA8 
   else
-    GPIOA->BSRR = GPIO_BSRR_BR_8;		/* atomic clr PA8 */
+    GPIOA->BSRR = GPIO_BSRR_BR_8;		// atomic clr PA8 
 }
 
 /* setup 32MHz as system clock */
@@ -85,6 +96,14 @@ void setHSIClock(void)
 }
 
 
+void usart1_write_byte(uint8_t b)
+{
+  while ( (USART1->ISR & USART_ISR_TC) == 0 )
+      ;
+  USART1->TDR = b;
+}
+
+
 int main()
 {
   
@@ -102,42 +121,43 @@ int main()
   GPIOA->PUPDR &= ~GPIO_PUPDR_PUPD8;	/* no pullup/pulldown for PA8 */
   GPIOA->BSRR = GPIO_BSRR_BR_8;		/* atomic clr PA8 */
 
-
-  //GPIOA->MODER &= ~GPIO_MODER_MODE4;	/* clear mode for PA8 */
-  GPIOA->MODER |= GPIO_MODER_MODE4_Msk;	/* Analog mode for PA4 */
-  __NOP();
-  __NOP();
-
-  RCC->APB1ENR |= RCC_APB1ENR_DACEN; /* Enable the peripheral clock of the DAC */
-
-  //DAC->CR = DAC_CR_TSEL1_Msk;
-  DAC->CR = DAC->CR 
-    |  DAC_CR_WAVE1_1 	/* triangle */
-    | DAC_CR_MAMP1_3 
-    | DAC_CR_MAMP1_0 
-    | DAC_CR_BOFF1 
-    | DAC_CR_TEN1 	/* DAC trigger enable */
-    | DAC_CR_EN1; /* enable DAC1 */    
-  DAC->DHR12R1 = 0; /* Define the low value of the triangle on */ 
   
-  
-  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+  RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
   __NOP();
   __NOP();
-  TIM6->PSC = 0;	// no prescaler 
-  TIM6->ARR=8*16; 
-  TIM6->CR2 = TIM_CR2_MMS_1;	// TRGO on update
-  TIM6->CR1 = TIM_CR1_CEN;	// enable
     
+  RCC->CCIPR &= RCC_CCIPR_USART1SEL;		// clear clock selection
+  RCC->CCIPR |= RCC_CCIPR_USART1SEL_0;	// select system clock
   
+  
+  GPIOA->MODER &= ~GPIO_MODER_MODE9;  // clear mode  
+  GPIOA->MODER |= GPIO_MODER_MODE9_1;  // enable alternate functions
+  GPIOA->AFR[1] &= ~GPIO_AFRH_AFSEL9;		// clear alternate function
+  GPIOA->AFR[1] |= 4 << GPIO_AFRH_AFSEL9_Pos ;		// AF4: USART pins
+
+  GPIOA->MODER &= ~GPIO_MODER_MODE10;  // clear mode  
+  GPIOA->MODER |= GPIO_MODER_MODE10_1;  // enable alternate functions
+  GPIOA->AFR[1] &= ~GPIO_AFRH_AFSEL10;		// clear alternate function
+  GPIOA->AFR[1] |= 4 << GPIO_AFRH_AFSEL10_Pos ;		// AF4: USART pins
+
+  USART1->BRR = 278; 	/* 32000000U / 115200 with 16x oversampling */ ;
+  //USART1->BRR = 32000000U / 9600;
+  USART1->CR1 = USART_CR1_TE | USART_CR1_RE;	/* default 8-N-1 configuration, transmit & receive enable */
+  USART1->CR1 |= USART_CR1_UE;	/* enable usart */
+
   
   SysTick->LOAD = 2000*500 *16- 1;
   SysTick->VAL = 0;
   SysTick->CTRL = 7;   /* enable, generate interrupt (SysTick_Handler), do not divide by 2 */
     
-  //__disable_irq();
   
   for(;;)
   {
+    usart1_write_byte('a');
+    usart1_write_byte('b');
+    usart1_write_byte('\n');
+    
+    
+    delay_micro_seconds(1000000);
   }
 }

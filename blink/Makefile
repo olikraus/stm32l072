@@ -50,6 +50,10 @@ MCPU:=cortex-m0plus
 SYSINC:=../sys
 SYSSRC:=$(wildcard ../sys/*.c)
 
+# Include directory for other common files
+COMMONINC:=../common
+COMMONSRC:=$(wildcard ../common/*.c)
+
 # Include directory for the u8g2 include files
 #U8G2INC:=../../../../csrc/
 #U8G2SRC:=$(wildcard ../../../../csrc/*.c)
@@ -61,7 +65,8 @@ SYSSRC:=$(wildcard ../sys/*.c)
 # Directory for the linker script
 LDSCRIPTDIR:=.
 # Name of the linker script (must be the "keep" script, because the other script is not always working)
-LDSCRIPT:=stm32l072xz.ld
+# LDSCRIPT:=stm32l072xz.ld
+LDSCRIPT:=$(wildcard *.ld) 
 
 #================================================
 # Main part of the Makefile starts here. Usually no changes are needed.
@@ -72,7 +77,7 @@ ELFNAME:=$(TARGETNAME).elf
 HEXNAME:=$(TARGETNAME).hex
 DISNAME:=$(TARGETNAME).dis
 MAPNAME:=$(TARGETNAME).map
-OBJ:=$(CSRC:.c=.o) $(SSRC:.s=.o) $(SYSSRC:.c=.o)
+OBJ:=$(CSRC:.c=.o) $(SSRC:.s=.o) $(SYSSRC:.c=.o) $(COMMONSRC:.c=.o)
 # $(SYSSRC:.c=.o) $(U8G2SRC:.c=.o) $(FFSRC:.c=.o)
 
 # Replace standard build tools by arm tools
@@ -86,7 +91,7 @@ SIZE:=$(GCCBINPATH)arm-none-eabi-size
 # Common flags
 COMMON_FLAGS = -mthumb -mcpu=$(MCPU)
 COMMON_FLAGS += -DSTM32L072xx
-COMMON_FLAGS += -Wall -I. -I$(SYSINC) -I$(U8G2INC) 
+COMMON_FLAGS += -Wall -I. -I$(SYSINC) -I$(COMMONINC) 
 # define stack size (defaults to 0x0100)  
 # COMMON_FLAGS += -D__STACK_SIZE=0x0100
 # COMMON_FLAGS += -Os -flto
