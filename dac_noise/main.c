@@ -26,11 +26,8 @@ void __attribute__ ((interrupt, used)) SysTick_Handler(void)
 }
 
 
-
 int main()
 {
-  
-  
   setHSI32MhzSysClock();					/* change to 32MHz */
   
   RCC->IOPENR |= RCC_IOPENR_IOPAEN;		/* Enable clock for GPIO Port A */
@@ -54,8 +51,9 @@ int main()
 
   //DAC->CR = DAC_CR_TSEL1_Msk;
   DAC->CR = DAC->CR 
-    |  DAC_CR_WAVE1_1 	/* triangle */
+    |  DAC_CR_WAVE1_0 	/* Noise */
     | DAC_CR_MAMP1_3 
+//    | DAC_CR_MAMP1_1 
     | DAC_CR_MAMP1_0 
     | DAC_CR_BOFF1 
     | DAC_CR_TEN1 	/* DAC trigger enable */
