@@ -53,6 +53,7 @@
 */
 
 #include "stm32l0xx.h"
+#include "sysclk.h"
 
 volatile unsigned long SysTickCount = 0;
 

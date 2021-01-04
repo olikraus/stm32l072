@@ -13,6 +13,7 @@
 
 #include "stm32l0xx.h"
 #include "sysclk.h"
+#include "delay.h"
 
 volatile unsigned long SysTickCount = 0;
 
@@ -27,8 +28,35 @@ void __attribute__ ((interrupt, used)) SysTick_Handler(void)
 }
 
 
+
+/*
+  Linear Congruential Generator (LCG)
+  z = (a*z + c) % m;  
+  m = 2^32
+    
+  https://en.wikipedia.org/wiki/Linear_congruential_generator
+
+  a-1: dividable by 2
+  a-1: multiple of 4
+  c: not dividable by 2
+  
+*/
+
+
+uint32_t z = 0;
+
+uint16_t lcg(void)
+{
+  //z = (uint32_t)((uint32_t)214013*(uint32_t)z + (uint32_t)2531011);
+  z = (uint32_t)((uint32_t)22695477*(uint32_t)z + (uint32_t)1);
+  return z>>12;
+}
+
+
 int main()
 {
+  
+
   setHSI32MhzSysClock();					/* change to 32MHz */
   
   RCC->IOPENR |= RCC_IOPENR_IOPAEN;		/* Enable clock for GPIO Port A */
@@ -52,23 +80,16 @@ int main()
 
   //DAC->CR = DAC_CR_TSEL1_Msk;
   DAC->CR = DAC->CR 
-    |  DAC_CR_WAVE1_0 	/* Noise */
+ //   |  DAC_CR_WAVE1_0 	/* Noise */
     | DAC_CR_MAMP1_3 
-//    | DAC_CR_MAMP1_1 
+    | DAC_CR_MAMP1_1 
     | DAC_CR_MAMP1_0 
     | DAC_CR_BOFF1 
-    | DAC_CR_TEN1 	/* DAC trigger enable */
+//    | DAC_CR_TEN1 	/* DAC trigger enable */
     | DAC_CR_EN1; /* enable DAC1 */    
   DAC->DHR12R1 = 0; /* Define the low value of the triangle on */ 
   
   
-  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
-  __NOP();
-  __NOP();
-  TIM6->PSC = 0;	// no prescaler 
-  TIM6->ARR=8*16; 
-  TIM6->CR2 = TIM_CR2_MMS_1;	// TRGO on update
-  TIM6->CR1 = TIM_CR1_CEN;	// enable
     
   
   
@@ -80,5 +101,9 @@ int main()
   
   for(;;)
   {
+    //DAC->DHR12R1++;
+    //DAC->DHR12R1 &= 0x03ff;
+    DAC->DHR12R1 = lcg() & 0x01ff;
+    delay_micro_seconds(2);
   }
 }
