@@ -298,7 +298,7 @@ const q31_t coeffTable[950] = {
 ** Desired gains, in dB, per band
 ** ------------------------------------------------------------------- */
 
-int gainDB[5] = {0, -3, 6, 4, -6};
+int gainDB[5] = {-8, -8, -8, 8, 8};
 
 float32_t snr;
 q15_t testOutputQ15[TESTLENGTH];
@@ -318,6 +318,21 @@ void __attribute__ ((interrupt, used)) SysTick_Handler(void)
 
 
 
+uint16_t lcg16(void)
+{
+  static uint32_t z = 0;
+  //z = (uint32_t)((uint32_t)214013*(uint32_t)z + (uint32_t)2531011);
+  z = (uint32_t)((uint32_t)22695477*(uint32_t)z + (uint32_t)1);
+  return z>>12;
+}
+
+uint32_t lcg32(void)
+{
+  static uint32_t z = 0;
+  //z = (uint32_t)((uint32_t)214013*(uint32_t)z + (uint32_t)2531011);
+  z = (uint32_t)((uint32_t)22695477*(uint32_t)z + (uint32_t)1);
+  return z;
+}
 
 /* ----------------------------------------------------------------------
  * Graphic equalizer Example
@@ -332,7 +347,7 @@ int main(void)
   arm_biquad_casd_df1_inst_q31 S3;
   arm_biquad_casd_df1_inst_q31 S4;
   arm_biquad_casd_df1_inst_q31 S5;
-  int i;
+  int i, j;
   //int32_t status;
 
   
@@ -411,6 +426,11 @@ int main(void)
     ** ------------------------------------------------------------------- */
 
     arm_float_to_q31(inputF32 + (i*BLOCKSIZE), inputQ31, BLOCKSIZE);
+    
+    for( j = 0; j < BLOCKSIZE; j++ )
+      inputQ31[j] = lcg32()>>2;
+    
+    arm_q31_to_q15(inputQ31, testOutputQ15 + (i * BLOCKSIZE), BLOCKSIZE);	/* convert to q15 */
 
     /* ----------------------------------------------------------------------
     ** Scale down by 1/8.  This provides additional headroom so that the
@@ -458,9 +478,10 @@ int main(void)
     for(i=0; i < TESTLENGTH; i++)
     {
       DAC->DHR12R1 = (testOutputQ15[i] + 0x8000) >> 5;
-      delay_micro_seconds(2);
+      delay_micro_seconds(1);
     }
-    delay_micro_seconds(200);
+    //DAC->DHR12R1 = 0;
+    //delay_micro_seconds(200);
   }
 
 }
