@@ -73,10 +73,10 @@ int main()
 
   //GPIOA->MODER &= ~GPIO_MODER_MODE4;	/* clear mode for PA8 */
   GPIOA->MODER |= GPIO_MODER_MODE4_Msk;	/* Analog mode for PA4 */
-  __NOP();
-  __NOP();
 
   RCC->APB1ENR |= RCC_APB1ENR_DACEN; /* Enable the peripheral clock of the DAC */
+  __NOP();
+  __NOP();
 
   //DAC->CR = DAC_CR_TSEL1_Msk;
   DAC->CR = DAC->CR 

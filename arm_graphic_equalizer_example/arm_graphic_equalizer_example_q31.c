@@ -129,6 +129,10 @@
 #include "arm_math.h"
 #include "math_helper.h"
 
+#include "stm32l0xx.h"
+#include "sysclk.h"
+#include "delay.h"
+
 #if defined(SEMIHOSTING)
 #include <stdio.h>
 #endif
@@ -172,6 +176,7 @@ static q31_t biquadStateBand5Q31[4 * 2];
 
 q31_t inputQ31[BLOCKSIZE];
 q31_t outputQ31[BLOCKSIZE];
+
 
 /* ----------------------------------------------------------------------
 ** Entire coefficient table.  There are 10 coefficients per 4th order Biquad
@@ -296,22 +301,78 @@ const q31_t coeffTable[950] = {
 int gainDB[5] = {0, -3, 6, 4, -6};
 
 float32_t snr;
+q15_t testOutputQ15[TESTLENGTH];
+
+
+volatile unsigned long SysTickCount = 0;
+
+void __attribute__ ((interrupt, used)) SysTick_Handler(void)
+{
+  SysTickCount++;  
+  
+  if ( SysTickCount & 1 )
+    GPIOA->BSRR = GPIO_BSRR_BS_8;		/* atomic set PA8 */
+  else
+    GPIOA->BSRR = GPIO_BSRR_BR_8;		/* atomic clr PA8 */
+}
+
+
 
 
 /* ----------------------------------------------------------------------
  * Graphic equalizer Example
  * ------------------------------------------------------------------- */
 
-int32_t main(void)
+int main(void)
 {
-  float32_t  *inputF32, *outputF32;
+  float32_t  *inputF32;
+  float32_t  *outputF32;
   arm_biquad_cas_df1_32x64_ins_q31 S1;
   arm_biquad_cas_df1_32x64_ins_q31 S2;
   arm_biquad_casd_df1_inst_q31 S3;
   arm_biquad_casd_df1_inst_q31 S4;
   arm_biquad_casd_df1_inst_q31 S5;
   int i;
-  int32_t status;
+  //int32_t status;
+
+  
+  
+  setHSI32MhzSysClock();					/* change to 32MHz */
+  
+  RCC->IOPENR |= RCC_IOPENR_IOPAEN;		/* Enable clock for GPIO Port A */
+  __NOP();
+  __NOP();
+
+  GPIOA->MODER &= ~GPIO_MODER_MODE8;	/* clear mode for PA8 */
+  GPIOA->MODER |= GPIO_MODER_MODE8_0;	/* Output mode for PA8 */
+  GPIOA->OTYPER &= ~GPIO_OTYPER_OT_8;	/* no Push/Pull for PA8 */
+  GPIOA->OSPEEDR &= ~GPIO_OSPEEDER_OSPEED8;	/* low speed for PA8 */
+  GPIOA->PUPDR &= ~GPIO_PUPDR_PUPD8;	/* no pullup/pulldown for PA8 */
+  GPIOA->BSRR = GPIO_BSRR_BR_8;		/* atomic clr PA8 */
+
+
+  //GPIOA->MODER &= ~GPIO_MODER_MODE4;	/* clear mode for PA8 */
+  GPIOA->MODER |= GPIO_MODER_MODE4_Msk;	/* Analog mode for PA4 */
+
+  RCC->APB1ENR |= RCC_APB1ENR_DACEN; /* Enable the peripheral clock of the DAC */
+  __NOP();
+  __NOP();
+
+  //DAC->CR = DAC_CR_TSEL1_Msk;
+  DAC->CR = DAC->CR 
+ //   |  DAC_CR_WAVE1_0 	/* Noise */
+    | DAC_CR_MAMP1_3 
+    | DAC_CR_MAMP1_1 
+    | DAC_CR_MAMP1_0 
+    | DAC_CR_BOFF1 
+//    | DAC_CR_TEN1 	/* DAC trigger enable */
+    | DAC_CR_EN1; /* enable DAC1 */    
+  DAC->DHR12R1 = 0; /* Define the low value of the triangle on */ 
+
+  SysTick->LOAD = 2000*500 *16- 1;
+  SysTick->VAL = 0;
+  SysTick->CTRL = 7;   /* enable, generate interrupt (SysTick_Handler), do not divide by 2 */
+
 
   inputF32 = &testInput_f32[0];
   outputF32 = &testOutput[0];
@@ -377,34 +438,29 @@ int32_t main(void)
     ** Convert Q31 result back to float
     ** ------------------------------------------------------------------- */
 
-    arm_q31_to_float(outputQ31, outputF32 + (i * BLOCKSIZE), BLOCKSIZE);
+    //arm_q31_to_float(outputQ31, outputF32 + (i * BLOCKSIZE), BLOCKSIZE);
 
     /* ----------------------------------------------------------------------
     ** Scale back up
     ** ------------------------------------------------------------------- */
 
-    arm_scale_f32(outputF32 + (i * BLOCKSIZE), 8.0f, outputF32 + (i * BLOCKSIZE), BLOCKSIZE);
+    //arm_scale_f32(outputF32 + (i * BLOCKSIZE), 8.0f, outputF32 + (i * BLOCKSIZE), BLOCKSIZE);
+    
+    arm_shift_q31(outputQ31, 3, outputQ31, BLOCKSIZE);		/* undo the 1/8 scale */
+    arm_q31_to_q15(outputQ31, testOutputQ15 + (i * BLOCKSIZE), BLOCKSIZE);	/* convert to q15 */
+    //arm_shift_q15(testOutputQ15 + (i * BLOCKSIZE), 5, testOutputQ15 + (i * BLOCKSIZE), BLOCKSIZE);  /* reduce to Q10 */
+    
   };
 
-  snr = arm_snr_f32(testRefOutput_f32, testOutput, TESTLENGTH);
-
-  status = (snr < SNR_THRESHOLD_F32) ? ARM_MATH_TEST_FAILURE : ARM_MATH_SUCCESS;
   
-  if (status != ARM_MATH_SUCCESS)
+  for(;;)
   {
-#if defined (SEMIHOSTING)
-    printf("FAILURE\n");
-#else
-    while (1);                             /* main function does not return */
-#endif
-  }
-  else
-  {
-#if defined (SEMIHOSTING)
-    printf("SUCCESS\n");
-#else
-    while (1);                             /* main function does not return */
-#endif
+    for(i=0; i < TESTLENGTH; i++)
+    {
+      DAC->DHR12R1 = (testOutputQ15[i] + 0x8000) >> 5;
+      delay_micro_seconds(2);
+    }
+    delay_micro_seconds(200);
   }
 
 }
