@@ -96,23 +96,35 @@ int main()
   SysTick->CTRL = 7;   /* enable, generate interrupt (SysTick_Handler), do not divide by 2 */
     
     
+  /*
+    I2S Pins
+    PB9:  AF5: I2S2_WS
+    PB10: AF5: SPI2_SCK (=I2S2_CK???)
+    PB12: AF0: I2S2_WS
+    PB13: AF0: I2S2_CK
+    PB14: AF0: I2S2_MCK
+    PB15: AF0: I2S2_SD
+    PC2: AF2: I2S2_MCK
+    PC3: AF2: I2S2_SD    
+    
+    Problem: The I2S pins are not available with the STM32L072 in the 32 pin package
+    
+  */
+    
   SPI2->CR1 = 0;	/* disable SPI */
   SPI2->I2SCFGR 	= SPI_I2SCFGR_I2SMOD				// enable I2S
 				| (3<<SPI_I2SCFGR_I2SCFG_Pos)		// master receive
 				| (0<<SPI_I2SCFGR_I2SSTD_Pos)  	// I2S Philips standard (WS once cycle before MSB)
-				| (1<<SPI_I2SCFGR_DATALEN_Pos) 	// 24 bit data len
+				| (1<<SPI_I2SCFGR_DATLEN_Pos) 	// 24 bit data len
 				;
 
-  SPI->I2SPR 		= (11<<SPI_I2SPR_I2SDIV_Pos)		// see table 144, sec 30.6.3, p864
+  SPI2->I2SPR 	= (22<<SPI_I2SPR_I2SDIV_Pos)		// see table 144, sec 30.6.3, p865
 				| SPI_I2SPR_ODD
 				;
 				
   SPI2->I2SCFGR 	|= SPI_I2SCFGR_I2SE;		// enable
 		  
 
-  SPI2->CR1 = SPI_CR1_MSTR | SPI_CR1_BR; /* (1) */
-  SPI2->CR2 = SPI_CR2_SSOE | SPI_CR2_RXNEIE; /* (2) */
-  SPI2->CR1 |= SPI_CR1_SPE; /* enable SPI */
 
   for(;;)
   {
