@@ -53,6 +53,24 @@ int main()
 
   RCC->APB1ENR |= RCC_APB1ENR_DACEN; /* Enable the peripheral clock of the DAC */
 
+/*
+MAMP:
+0000: Unmask bit0 of LFSR/ triangle amplitude equal to 1
+0001: Unmask bits[1:0] of LFSR/ triangle amplitude equal to 3
+0010: Unmask bits[2:0] of LFSR/ triangle amplitude equal to 7
+0011: Unmask bits[3:0] of LFSR/ triangle amplitude equal to 15
+0100: Unmask bits[4:0] of LFSR/ triangle amplitude equal to 31
+0101: Unmask bits[5:0] of LFSR/ triangle amplitude equal to 63
+0110: Unmask bits[6:0] of LFSR/ triangle amplitude equal to 127
+0111: Unmask bits[7:0] of LFSR/ triangle amplitude equal to 255
+1000: Unmask bits[8:0] of LFSR/ triangle amplitude equal to 511
+1001: Unmask bits[9:0] of LFSR/ triangle amplitude equal to 1023
+1010: Unmask bits[10:0] of LFSR/ triangle amplitude equal to 2047
+≥ 1011: Unmask bits[11:0] of LFSR/ triangle amplitude equal to 4095
+
+triangle counter starts with 0 (DHR12R1) and counts to the MAMP value up and down.
+This means, double amplitude also means half frequency
+*/
   //DAC->CR = DAC_CR_TSEL1_Msk;
   DAC->CR = DAC->CR 
     |  DAC_CR_WAVE1_1 	/* triangle */
@@ -68,7 +86,7 @@ int main()
   __NOP();
   __NOP();
   TIM6->PSC = 0;	// no prescaler 
-  TIM6->ARR=8*16; 
+  TIM6->ARR=8*16;               // defines update speed of the triangle counter (frequency) 
   TIM6->CR2 = TIM_CR2_MMS_1;	// TRGO on update
   TIM6->CR1 = TIM_CR1_CEN;	// enable
     

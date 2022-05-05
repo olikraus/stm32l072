@@ -102,16 +102,15 @@ int main()
   RCC->CCIPR &= RCC_CCIPR_USART1SEL;		// clear clock selection
   RCC->CCIPR |= RCC_CCIPR_USART1SEL_0;	// select system clock
   
-  
   GPIOA->MODER &= ~GPIO_MODER_MODE9;  // clear mode  
   GPIOA->MODER |= GPIO_MODER_MODE9_1;  // enable alternate functions
   GPIOA->AFR[1] &= ~GPIO_AFRH_AFSEL9;		// clear alternate function
-  GPIOA->AFR[1] |= 4 << GPIO_AFRH_AFSEL9_Pos ;		// AF4: USART pins
+  GPIOA->AFR[1] |= 4 << GPIO_AFRH_AFSEL9_Pos ;		// AF1: USART pins
 
   GPIOA->MODER &= ~GPIO_MODER_MODE10;  // clear mode  
   GPIOA->MODER |= GPIO_MODER_MODE10_1;  // enable alternate functions
   GPIOA->AFR[1] &= ~GPIO_AFRH_AFSEL10;		// clear alternate function
-  GPIOA->AFR[1] |= 4 << GPIO_AFRH_AFSEL10_Pos ;		// AF4: USART pins
+  GPIOA->AFR[1] |= 4 << GPIO_AFRH_AFSEL10_Pos ;		// AF1: USART pins
 
   USART1->BRR = 278; 	/* 32000000U / 115200 with 16x oversampling */ ;
   //USART1->BRR = 32000000U / 9600;
