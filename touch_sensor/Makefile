@@ -36,7 +36,7 @@ GCCBINPATH:=/home/kraus/prg/gcc-arm-none-eabi-7-2018-q2-update/bin/
 # Project Information
 
 # The name for the project
-TARGETNAME:=usart_echo
+TARGETNAME:=touch_sensor
 
 # The source files of the project
 CSRC:=$(wildcard *.c) 
